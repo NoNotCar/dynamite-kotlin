@@ -17,8 +17,11 @@ class MyBot : Bot {
             if (pointsThisRound(gamestate,Move.D)>3){
                 //opponent is just dynamiting on draw...
                 return Move.W
+            }else if (gotCountered(gamestate) && ranInt(2)==1){
+                //they might play W, do RPS instead...
+            }else {
+                return Move.D
             }
-            return Move.D
         }
         return rpsMoves.shuffled().first()
     }
