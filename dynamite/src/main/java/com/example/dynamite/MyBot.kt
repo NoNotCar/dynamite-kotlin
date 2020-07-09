@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
-    val P_THRESHOLD=0.5
+    val P_THRESHOLD=0.4
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
@@ -23,12 +23,15 @@ class MyBot : Bot {
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
         val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw
-        allMoves.forEach{
-            if (p.getOrDefault(it,0.0)>P_THRESHOLD){
-                return counter(it,dynamite)
+        val mx=p.values.max()?:1.0
+        if (mx>P_THRESHOLD) {
+            allMoves.forEach {
+                if (p.getOrDefault(it, 0.0) == mx) {
+                    return counter(it, dynamite)
+                }
             }
         }
-        return rpsMoves.shuffled().first()
+        return counter(rpsMoves.shuffled().first(),dynamite)
     }
     fun counter(p2Move:Move,dynamite:Boolean=false):Move{
         if (dynamite && rpsMoves.contains(p2Move)){
