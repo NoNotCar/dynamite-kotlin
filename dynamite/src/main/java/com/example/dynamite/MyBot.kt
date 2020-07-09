@@ -3,6 +3,7 @@ package com.example.dynamite
 import com.softwire.dynamite.bot.Bot
 import com.softwire.dynamite.game.Gamestate
 import com.softwire.dynamite.game.Move
+import kotlin.math.pow
 import kotlin.random.Random
 
 class MyBot : Bot {
@@ -13,11 +14,12 @@ class MyBot : Bot {
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
-        if (dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(1, 4)) {
+        val tar_draw=target_draw_number(gamestate)
+        if (dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(tar_draw-2, tar_draw)) {
             if (pointsThisRound(gamestate,Move.D)>=3){
                 //opponent is just dynamiting on draw...
                 return Move.W
-            }else if (gotCountered(gamestate) && ranInt(2)==1){
+            }else if (gotCountered(gamestate) && ranInt(1)==1){
                 //they might play W, do RPS instead...
             }else {
                 return Move.D
@@ -29,7 +31,19 @@ class MyBot : Bot {
     fun dynamiteLeft(gamestate: Gamestate): Int {
         return 100 - gamestate.rounds.map { if (it.p1 == Move.D) 1 else 0 }.sum()
     }
+    fun target_draw_number(gamestate: Gamestate):Int{
+        //return how many draws we need for optimal dynamite conservation
+        val dynamite_fraction=dynamiteLeft(gamestate)/2000.0
+        if (dynamite_fraction==0.0){return 9999}
+        else{
+            var n=0
+            while (0.33333.pow(n)>dynamite_fraction){
+                n++
+            }
+            return n
+        }
 
+    }
     fun gotCountered(gamestate: Gamestate): Boolean {
         //the opponent countered our dynamite play!
         return gamestate.rounds.any { it.p1 == Move.D && it.p2 == Move.W }
@@ -56,7 +70,7 @@ class MyBot : Bot {
         if (r_cache.containsKey(Pair(from, to))) {
             return r_cache[Pair(from, to)]?.shuffled()?.first() ?: from
         }
-        r_cache[Pair(from, to)] = (from until to).toList()
+        r_cache[Pair(from, to)] = (from..to).toList()
         return ranInt(from, to)
     }
 
