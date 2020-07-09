@@ -12,32 +12,36 @@ class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
     val P_THRESHOLD=0.5
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
-    val rpsCounters= mapOf(Pair(Move.R,Move.P), Pair(Move.P,Move.S), Pair(Move.S,Move.R))
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
         mutableMapOf<Pair<Int, Int>, List<Int>>() //so we don't make a new list every ranInt call
+    val dataset=mutableMapOf<Int,MutableList<Move>>()
 
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
-        if (p.getOrDefault(Move.D,0.0)>P_THRESHOLD) {
-            return Move.W
-        }
-        if (dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw) {
-            if (p.getOrDefault(Move.W,0.0)<P_THRESHOLD){
-                return Move.D
-            }
-        }
-        rpsMoves.forEach{
+        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw
+        allMoves.forEach{
             if (p.getOrDefault(it,0.0)>P_THRESHOLD){
-                return rpsCounters[it]?:Move.R
+                return counter(it,dynamite)
             }
         }
         return rpsMoves.shuffled().first()
     }
-
+    fun counter(p2Move:Move,dynamite:Boolean=false):Move{
+        if (dynamite && rpsMoves.contains(p2Move)){
+            return Move.D
+        }
+        return when(p2Move){
+            Move.D->Move.W
+            Move.W->rpsMoves.shuffled().first()
+            Move.S->Move.R
+            Move.R->Move.P
+            Move.P->Move.S
+        }
+    }
     fun dynamiteLeft(gamestate: Gamestate): Int {
         return 100 - gamestate.rounds.map { if (it.p1 == Move.D) 1 else 0 }.sum()
     }
@@ -54,11 +58,8 @@ class MyBot : Bot {
         }
 
     }
-    fun prediction(gamestate: Gamestate):Map<Move,Double>{
-        //return best estimate of what the opponent is gonna do
-        //STRANGE, ISN'T IT!
-        val dataset=mutableMapOf<Int,MutableList<Move>>()
-        gamestate.rounds.forEach {
+    fun add_data(gamestate: Gamestate,vararg rounds:Round){
+        rounds.forEach {
             val points=pointsThatRound(gamestate,it)
             if (dataset.containsKey(points)){
                 dataset[points]?.add(it.p2)
@@ -66,12 +67,17 @@ class MyBot : Bot {
                 dataset[points]= mutableListOf(it.p2)
             }
         }
+    }
+    fun prediction(gamestate: Gamestate):Map<Move,Double>{
+        //return best estimate of what the opponent is gonna do
+        //STRANGE, ISN'T IT!
+        if (gamestate.rounds.isEmpty()){
+            return mapOf(Pair(Move.R,1.0))
+        }
+        add_data(gamestate,gamestate.rounds.last())
         var pts=pointsThisRound(gamestate)
         while (pts>1 && (dataset[pts]?.size?:0<CONFIDENCE_THRESHOLD)){
             pts--
-        }
-        if (!dataset.containsKey(pts)){
-            return mapOf(Pair(Move.R,1.0))
         }
         val p= mutableMapOf<Move,Double>()
         val past_plays=dataset[pts]?: mutableListOf<Move>()
@@ -116,8 +122,6 @@ class MyBot : Bot {
     }
 
     init {
-        // Are you debugging?
-        // Put a breakpoint on the line below to see when we start a new match
-        //println("Started new match")
+        dataset.clear()
     }
 }

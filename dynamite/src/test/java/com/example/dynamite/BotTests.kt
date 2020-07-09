@@ -26,19 +26,30 @@ class BotTests {
         val bot=MyBot()
         assertEquals(2,bot.pointsThatRound(gs,gs.rounds[1]))
     }
-    @Test fun beats_all_example_bots(){
-        val results = DynamiteRunner.playGames(DynamiteRunner.Factory<Bot>{MyBot()}).results
-        results.forEach {
-            assertEquals("WIN",it.result)
-        }
-    }
+
     @Test fun dynamites_on_long_draw_chain() {
         val bot = MyBot()
         val gamestate = setup_gamestate(
             Pair(Move.P, Move.P), Pair(Move.P, Move.P), Pair(Move.R, Move.R),
             Pair(Move.S, Move.S)
         )
+        bot.add_data(gamestate,rounds = *gamestate.rounds.toTypedArray())
         assertEquals(Move.D, bot.makeMove(gamestate))
+    }
+    @Test fun fool_me_twice(){
+        val bot = MyBot()
+        val gamestate = setup_gamestate(
+            Pair(Move.P, Move.P), Pair(Move.P, Move.D), Pair(Move.R, Move.R),
+            Pair(Move.S, Move.D), Pair(Move.S,Move.S)
+        )
+        bot.add_data(gamestate,rounds = *gamestate.rounds.toTypedArray())
+        assertEquals(Move.W, bot.makeMove(gamestate))
+    }
+    @Test fun beats_all_example_bots(){
+        val results = DynamiteRunner.playGames(DynamiteRunner.Factory<Bot>{MyBot()}).results
+        results.forEach {
+            assertEquals("WIN",it.result)
+        }
     }
 //    @Test fun waters_on_dynamite_chain(){
 //        val bot = MyBot()
@@ -48,12 +59,4 @@ class BotTests {
 //        )
 //        assertEquals(Move.W, bot.makeMove(gamestate))
 //    }
-    @Test fun fool_me_twice(){
-        val bot = MyBot()
-        val gamestate = setup_gamestate(
-            Pair(Move.P, Move.P), Pair(Move.P, Move.D), Pair(Move.R, Move.R),
-            Pair(Move.S, Move.D), Pair(Move.S,Move.S)
-        )
-    assertEquals(Move.W, bot.makeMove(gamestate))
-    }
 }
