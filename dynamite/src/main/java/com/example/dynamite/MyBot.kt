@@ -9,10 +9,10 @@ class MyBot : Bot {
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
-        if (dynamiteLeft(gamestate)>0 && pointsThisRound(gamestate)>= Random.nextInt(1,4)){
+        if (dynamiteLeft(gamestate)>0 && pointsThisRound(gamestate)>= ranInt(1,4)){
             return Move.D
         }
-        return arrayOf(Move.R,Move.P,Move.S)[Random.nextInt(3)]
+        return arrayOf(Move.R,Move.P,Move.S)[ranInt(3)]
     }
     fun dynamiteLeft(gamestate: Gamestate):Int{
         return 100-gamestate.rounds.map { if (it.p1==Move.D) 1 else 0 }.sum()
@@ -31,6 +31,13 @@ class MyBot : Bot {
             }
         }
         return points
+    }
+    fun ranInt(to:Int):Int{
+        //because it be broken
+        return (0 until to).toList().shuffled().first()
+    }
+    fun ranInt(from:Int,to:Int):Int{
+        return (from until to).toList().shuffled().first()
     }
     init {
         // Are you debugging?
