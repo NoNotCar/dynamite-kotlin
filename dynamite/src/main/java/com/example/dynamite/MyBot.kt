@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
-    val P_THRESHOLD=0.4
+    val P_THRESHOLD=0.05
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
@@ -23,17 +23,11 @@ class MyBot : Bot {
         // Put a breakpoint in this method to see when we make a move
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
-        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw-1
-        val mx=p.values.max()?:1.0
+        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(tar_draw-2,tar_draw)
+        val sortedP=p.values.sorted()
+        val mx=sortedP.last()
         var predicted=rpsMoves.shuffled().first()
-//        if (gamestate.rounds.size%CHECK_PROGRESS==0){
-//            erratic=!winning(gamestate)
-//            if (erratic){
-//                println("AAH I'M NOT WINNING! REEEEE")
-//                println(p)
-//            }
-//        }
-        if (mx>P_THRESHOLD) {
+        if (mx-sortedP[sortedP.size-2]>P_THRESHOLD) {
             allMoves.forEach {
                 if (p.getOrDefault(it, 0.0) == mx) {
                     predicted=it
@@ -61,9 +55,12 @@ class MyBot : Bot {
     fun dynamiteLeft(gamestate: Gamestate): Int {
         return 100 - gamestate.rounds.map { if (it.p1 == Move.D) 1 else 0 }.sum()
     }
+    fun oppositionDynamite(gamestate: Gamestate):Int{
+        return 100 - gamestate.rounds.map { if (it.p2 == Move.D) 1 else 0 }.sum()
+    }
     fun target_draw_number(gamestate: Gamestate):Int{
         //return how many draws we need for optimal dynamite conservation
-        val dynamite_fraction=dynamiteLeft(gamestate)/2000.0
+        val dynamite_fraction=dynamiteLeft(gamestate)/(2010.0-gamestate.rounds.size)
         if (dynamite_fraction==0.0){return 9999}
         else{
             var n=0
@@ -88,7 +85,7 @@ class MyBot : Bot {
         //return best estimate of what the opponent is gonna do
         //STRANGE, ISN'T IT!
         if (gamestate.rounds.isEmpty()){
-            return mapOf(Pair(Move.R,1.0))
+            return allMoves.map { Pair(it,0.2) }.toMap()
         }
         add_data(gamestate,gamestate.rounds.last())
         var pts=pointsThisRound(gamestate)
@@ -99,6 +96,9 @@ class MyBot : Bot {
         val past_plays=dataset[pts]?: mutableListOf<Move>()
         allMoves.forEach{
             p[it]=Collections.frequency(past_plays,it)/past_plays.size.toDouble()
+        }
+        if (oppositionDynamite(gamestate)==0){
+            p[Move.D]=0.0
         }
         return p
     }

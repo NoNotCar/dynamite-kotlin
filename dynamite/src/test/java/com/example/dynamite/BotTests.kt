@@ -40,10 +40,11 @@ class BotTests {
         val bot = MyBot()
         val gamestate = setup_gamestate(
             Pair(Move.P, Move.P), Pair(Move.P, Move.D), Pair(Move.R, Move.R),
-            Pair(Move.S, Move.D), Pair(Move.S,Move.S)
+            Pair(Move.S, Move.D), Pair(Move.S,Move.R), Pair(Move.P,Move.R), Pair(Move.S,Move.S)
         )
         bot.add_data(gamestate,rounds = *gamestate.rounds.toTypedArray())
         assertEquals(Move.W, bot.makeMove(gamestate))
+        println(bot.prediction(gamestate))
     }
     @Test fun beats_all_example_bots(){
         val results = DynamiteRunner.playGames(DynamiteRunner.Factory<Bot>{MyBot()}).results
