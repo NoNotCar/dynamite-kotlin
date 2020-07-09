@@ -6,13 +6,15 @@ import com.softwire.dynamite.game.Move
 import kotlin.random.Random
 
 class MyBot : Bot {
+    val rpsMoves= listOf(Move.R,Move.P,Move.S)
+    val r_cache= mutableMapOf<Pair<Int,Int>,List<Int>>()
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         if (dynamiteLeft(gamestate)>0 && pointsThisRound(gamestate)>= ranInt(1,4)){
             return Move.D
         }
-        return arrayOf(Move.R,Move.P,Move.S)[ranInt(3)]
+        return rpsMoves.shuffled().first()
     }
     fun dynamiteLeft(gamestate: Gamestate):Int{
         return 100-gamestate.rounds.map { if (it.p1==Move.D) 1 else 0 }.sum()
@@ -33,11 +35,15 @@ class MyBot : Bot {
         return points
     }
     fun ranInt(to:Int):Int{
-        //because it be broken
-        return (0 until to).toList().shuffled().first()
+        return ranInt(0,to)
     }
     fun ranInt(from:Int,to:Int):Int{
-        return (from until to).toList().shuffled().first()
+        //because it be broken
+        if (r_cache.containsKey(Pair(from,to))){
+            return r_cache[Pair(from,to)]?.shuffled()?.first()?:from
+        }
+        r_cache[Pair(from,to)]=(from until to).toList()
+        return ranInt(from, to)
     }
     init {
         // Are you debugging?
