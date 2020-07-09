@@ -14,6 +14,10 @@ class MyBot : Bot {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         if (dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(1, 4)) {
+            if (pointsThisRound(gamestate,Move.D)>3){
+                //opponent is just dynamiting on draw...
+                return Move.W
+            }
             return Move.D
         }
         return rpsMoves.shuffled().first()
@@ -28,10 +32,10 @@ class MyBot : Bot {
         return gamestate.rounds.any { it.p1 == Move.D && it.p2 == Move.W }
     }
 
-    fun pointsThisRound(gamestate: Gamestate): Int {
+    fun pointsThisRound(gamestate: Gamestate,onlyCount:Move?=null): Int {
         var points = 0
         for (round in gamestate.rounds.asReversed()) {
-            if (round.p1 == round.p2) {
+            if (round.p1 == round.p2 && (onlyCount==null || round.p1==onlyCount)) {
                 points++
             } else {
                 break
