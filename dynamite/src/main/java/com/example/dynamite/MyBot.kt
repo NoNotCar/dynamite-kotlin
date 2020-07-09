@@ -63,6 +63,6 @@ class MyBot : Bot {
     init {
         // Are you debugging?
         // Put a breakpoint on the line below to see when we start a new match
-        println("Started new match")
+        //println("Started new match")
     }
 }
