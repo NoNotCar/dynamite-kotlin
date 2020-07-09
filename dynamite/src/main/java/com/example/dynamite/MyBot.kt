@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
-    val P_THRESHOLD=0.05
+    val P_THRESHOLD=0.1
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
@@ -18,12 +18,13 @@ class MyBot : Bot {
     val dataset=mutableMapOf<Int,MutableList<Move>>()
     val CHECK_PROGRESS=1000 //check score at this point
     var erratic=false //go crazy if we're losing
+    val myopia=100
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
-        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(tar_draw-2,tar_draw)
+        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(tar_draw-1,tar_draw)
         val sortedP=p.values.sorted()
         val mx=sortedP.last()
         var predicted=rpsMoves.shuffled().first()
@@ -76,6 +77,9 @@ class MyBot : Bot {
             val points=pointsThatRound(gamestate,it)
             if (dataset.containsKey(points)){
                 dataset[points]?.add(it.p2)
+                if (dataset[points]?.size?:0>myopia){
+                    dataset[points]?.removeAt(0)
+                }
             }else{
                 dataset[points]= mutableListOf(it.p2)
             }
