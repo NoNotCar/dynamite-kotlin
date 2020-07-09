@@ -16,22 +16,35 @@ class MyBot : Bot {
     val r_cache =
         mutableMapOf<Pair<Int, Int>, List<Int>>() //so we don't make a new list every ranInt call
     val dataset=mutableMapOf<Int,MutableList<Move>>()
-
+    val CHECK_PROGRESS=1000 //check score at this point
+    var erratic=false //go crazy if we're losing
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
-        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw
+        val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= tar_draw-1
         val mx=p.values.max()?:1.0
+        var predicted=rpsMoves.shuffled().first()
+//        if (gamestate.rounds.size%CHECK_PROGRESS==0){
+//            erratic=!winning(gamestate)
+//            if (erratic){
+//                println("AAH I'M NOT WINNING! REEEEE")
+//                println(p)
+//            }
+//        }
         if (mx>P_THRESHOLD) {
             allMoves.forEach {
                 if (p.getOrDefault(it, 0.0) == mx) {
-                    return counter(it, dynamite)
+                    predicted=it
                 }
             }
         }
-        return counter(rpsMoves.shuffled().first(),dynamite)
+        if (erratic && ranInt(1)==1){
+            //they're gonna counter us, counter them back!
+            return counter(counter(counter(predicted,dynamite)))
+        }
+        return counter(predicted,dynamite)
     }
     fun counter(p2Move:Move,dynamite:Boolean=false):Move{
         if (dynamite && rpsMoves.contains(p2Move)){
@@ -89,6 +102,27 @@ class MyBot : Bot {
         }
         return p
     }
+    fun winning(gamestate: Gamestate):Boolean{
+        val scores= mutableMapOf(Pair(1,0), Pair(2,0))
+        gamestate.rounds.forEach {
+            val winner=get_winner(it)
+            if (winner>0){
+                scores[winner]=scores.getOrDefault(winner,0)+pointsThatRound(gamestate,it)
+            }
+        }
+        return scores.getOrDefault(1,0)>=scores.getOrDefault(2,0)
+    }
+    fun get_winner(round: Round):Int{
+        if (round.p1==round.p2){
+            return 0
+        }else if (round.p1==Move.W){
+            return if (round.p2==Move.D) 1 else 2
+        }else if (round.p2==Move.W){
+            return if (round.p1==Move.D) 2 else 1
+        }else{
+            return if (round.p1==counter(round.p2)) 1 else 2
+        }
+    }
     fun gotCountered(gamestate: Gamestate): Boolean {
         //the opponent countered our dynamite play!
         return gamestate.rounds.any { it.p1 == Move.D && it.p2 == Move.W }
@@ -126,5 +160,6 @@ class MyBot : Bot {
 
     init {
         dataset.clear()
+        erratic=false
     }
 }
