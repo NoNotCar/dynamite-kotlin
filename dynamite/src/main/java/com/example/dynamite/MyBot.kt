@@ -14,7 +14,7 @@ class MyBot : Bot {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         if (dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(1, 4)) {
-            if (pointsThisRound(gamestate,Move.D)>3){
+            if (pointsThisRound(gamestate,Move.D)>=3){
                 //opponent is just dynamiting on draw...
                 return Move.W
             }else if (gotCountered(gamestate) && ranInt(2)==1){

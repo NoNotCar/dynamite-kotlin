@@ -35,4 +35,12 @@ class BotTests {
         )
         assertEquals(Move.D, bot.makeMove(gamestate))
     }
+    @Test fun waters_on_dynamite_chain(){
+        val bot = MyBot()
+        val gamestate = setup_gamestate(
+            Pair(Move.P, Move.P), Pair(Move.P, Move.P), Pair(Move.R, Move.R),
+            Pair(Move.S, Move.S), Pair(Move.D,Move.D), Pair(Move.D,Move.D), Pair(Move.D,Move.D)
+        )
+        assertEquals(Move.W, bot.makeMove(gamestate))
+    }
 }
