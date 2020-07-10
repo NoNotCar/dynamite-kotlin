@@ -10,7 +10,7 @@ import kotlin.random.Random
 
 class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
-    val P_THRESHOLD=0.1
+    val P_THRESHOLD=0.2
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
@@ -18,7 +18,8 @@ class MyBot : Bot {
     val dataset=mutableMapOf<Int,MutableList<Move>>()
     val CHECK_PROGRESS=1000 //check score at this point
     var erratic=false //go crazy if we're losing
-    val myopia=2000
+    val myopia=100
+    val DISCOUNT_RATE=0.9
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
@@ -49,6 +50,9 @@ class MyBot : Bot {
             Move.R->Move.P
             Move.P->Move.S
         }
+    }
+    fun geosum(n:Int):Double{
+        return (1-DISCOUNT_RATE.pow(n))/(1-DISCOUNT_RATE)
     }
     fun counter_prediction(p:Map<Move,Double>,dynamite: Boolean):Map<Move,Double>{
         val cp= mutableMapOf<Move,Double>()
@@ -93,6 +97,15 @@ class MyBot : Bot {
             }
         }
     }
+    fun discounted_freq(list: List<Any>,what:Any?=null):Double{
+        var f=0.0
+        for (l in list.asReversed().withIndex()){
+            if (l.value==what || what==null){
+                f+=DISCOUNT_RATE.pow(l.index)
+            }
+        }
+        return f
+    }
     fun prediction(gamestate: Gamestate):Map<Move,Double>{
         //return best estimate of what the opponent is gonna do
         //STRANGE, ISN'T IT!
@@ -107,7 +120,7 @@ class MyBot : Bot {
         val p= mutableMapOf<Move,Double>()
         val past_plays=dataset[pts]?: mutableListOf<Move>()
         allMoves.forEach{
-            p[it]=Collections.frequency(past_plays,it)/past_plays.size.toDouble()
+            p[it]=discounted_freq(past_plays,it)/geosum(past_plays.size)
         }
         if (oppositionDynamite(gamestate)==0){
             p[Move.D]=0.0
