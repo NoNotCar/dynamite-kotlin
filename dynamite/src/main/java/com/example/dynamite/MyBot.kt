@@ -7,19 +7,28 @@ import com.softwire.dynamite.game.Round
 import java.util.*
 import kotlin.math.pow
 import kotlin.random.Random
-
+enum class Movetype{
+    RPS,D,W
+}
 class MyBot : Bot {
     val CONFIDENCE_THRESHOLD=1 //size of past moves before we're confident
-    val P_THRESHOLD=0.2
+    val P_THRESHOLD=0.1
     val rpsMoves = listOf(Move.R, Move.P, Move.S)
     val allMoves= listOf(Move.R,Move.P,Move.S,Move.W,Move.D)
     val r_cache =
         mutableMapOf<Pair<Int, Int>, List<Int>>() //so we don't make a new list every ranInt call
-    val dataset=mutableMapOf<Int,MutableList<Move>>()
+    val dataset=mutableMapOf<Pair<Int,Movetype>,MutableList<Move>>()
     val CHECK_PROGRESS=1000 //check score at this point
     var erratic=false //go crazy if we're losing
     val myopia=100
     val DISCOUNT_RATE=0.9
+    fun toMoveType(move:Move):Movetype{
+        return when(move){
+            Move.D->Movetype.D
+            Move.W->Movetype.W
+            else->Movetype.RPS
+        }
+    }
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
@@ -85,15 +94,16 @@ class MyBot : Bot {
 
     }
     fun add_data(gamestate: Gamestate,vararg rounds:Round){
-        rounds.forEach {
-            val points=pointsThatRound(gamestate,it)
-            if (dataset.containsKey(points)){
-                dataset[points]?.add(it.p2)
-                if (dataset[points]?.size?:0>myopia){
-                    dataset[points]?.removeAt(0)
+        rounds.withIndex().forEach {
+            val points=pointsThatRound(gamestate,it.value)
+            val ourPrevMove=toMoveType(if (it.index==0) Move.S else rounds[it.index-1].p1)
+            if (dataset.containsKey(Pair(points,ourPrevMove))){
+                dataset[Pair(points,ourPrevMove)]?.add(it.value.p2)
+                if (dataset[Pair(points,ourPrevMove)]?.size?:0>myopia){
+                    dataset[Pair(points,ourPrevMove)]?.removeAt(0)
                 }
             }else{
-                dataset[points]= mutableListOf(it.p2)
+                dataset[Pair(points,ourPrevMove)]= mutableListOf(it.value.p2)
             }
         }
     }
@@ -114,11 +124,12 @@ class MyBot : Bot {
         }
         add_data(gamestate,gamestate.rounds.last())
         var pts=pointsThisRound(gamestate)
-        while (pts>1 && (dataset[pts]?.size?:0<CONFIDENCE_THRESHOLD)){
+        val ourPrevMove=toMoveType(gamestate.rounds.last().p1)
+        while (pts>1 && (dataset[Pair(pts,ourPrevMove)]?.size?:0<CONFIDENCE_THRESHOLD)){
             pts--
         }
         val p= mutableMapOf<Move,Double>()
-        val past_plays=dataset[pts]?: mutableListOf<Move>()
+        val past_plays=dataset[Pair(pts,ourPrevMove)]?: mutableListOf<Move>()
         allMoves.forEach{
             p[it]=discounted_freq(past_plays,it)/geosum(past_plays.size)
         }

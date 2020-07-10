@@ -39,10 +39,11 @@ class BotTests {
     @Test fun fool_me_twice(){
         val bot = MyBot()
         val gamestate = setup_gamestate(
-            Pair(Move.P, Move.P), Pair(Move.P, Move.D), Pair(Move.R, Move.R),
-            Pair(Move.S, Move.D), Pair(Move.S,Move.R), Pair(Move.P,Move.R), Pair(Move.S,Move.S)
+            Pair(Move.P, Move.P), Pair(Move.P, Move.D), Pair(Move.P, Move.P),
+            Pair(Move.R, Move.D), Pair(Move.S,Move.R), Pair(Move.P,Move.R), Pair(Move.S,Move.S)
         )
         bot.add_data(gamestate,rounds = *gamestate.rounds.toTypedArray())
+        print(bot.dataset)
         assertEquals(Move.W, bot.makeMove(gamestate))
         println(bot.prediction(gamestate))
     }
