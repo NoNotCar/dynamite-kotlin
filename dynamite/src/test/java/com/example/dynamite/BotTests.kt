@@ -31,7 +31,7 @@ class BotTests {
         val bot = MyBot()
         val gamestate = setup_gamestate(
             Pair(Move.P, Move.P), Pair(Move.P, Move.P), Pair(Move.R, Move.R),
-            Pair(Move.S, Move.S)
+            Pair(Move.S, Move.S), Pair(Move.S,Move.S)
         )
         bot.add_data(gamestate,rounds = *gamestate.rounds.toTypedArray())
         assertEquals(Move.D, bot.makeMove(gamestate))

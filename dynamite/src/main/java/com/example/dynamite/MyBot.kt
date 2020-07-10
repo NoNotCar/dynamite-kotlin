@@ -56,7 +56,8 @@ class MyBot : Bot {
             cp[m]=0.0
         }
         p.forEach{
-            cp.plusAssign(Pair(counter(it.key,dynamite),it.value))
+            val c=counter(it.key,dynamite)
+            cp.put(c,cp.getOrDefault(c,0.0)+it.value)
         }
         return cp
     }
