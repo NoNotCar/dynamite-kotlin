@@ -18,22 +18,19 @@ class MyBot : Bot {
     val dataset=mutableMapOf<Int,MutableList<Move>>()
     val CHECK_PROGRESS=1000 //check score at this point
     var erratic=false //go crazy if we're losing
-    val myopia=100
+    val myopia=2000
     override fun makeMove(gamestate: Gamestate): Move {
         // Are you debugging?
         // Put a breakpoint in this method to see when we make a move
         val tar_draw=target_draw_number(gamestate)
         val p=prediction(gamestate)
         val dynamite=dynamiteLeft(gamestate) > 0 && pointsThisRound(gamestate) >= ranInt(tar_draw-1,tar_draw)
-        val sortedP=p.values.sorted()
+        var counters=counter_prediction(p,dynamite)
+        val sortedP=counters.values.sorted()
         val mx=sortedP.last()
         var predicted=rpsMoves.shuffled().first()
         if (mx-sortedP[sortedP.size-2]>P_THRESHOLD) {
-            allMoves.forEach {
-                if (p.getOrDefault(it, 0.0) == mx) {
-                    predicted=it
-                }
-            }
+            return counters.maxBy { it.value }?.key?:Move.R
         }
         if (erratic && ranInt(1)==1){
             //they're gonna counter us, counter them back!
@@ -53,6 +50,16 @@ class MyBot : Bot {
             Move.P->Move.S
         }
     }
+    fun counter_prediction(p:Map<Move,Double>,dynamite: Boolean):Map<Move,Double>{
+        val cp= mutableMapOf<Move,Double>()
+        for (m in allMoves){
+            cp[m]=0.0
+        }
+        p.forEach{
+            cp.plusAssign(Pair(counter(it.key,dynamite),it.value))
+        }
+        return cp
+    }
     fun dynamiteLeft(gamestate: Gamestate): Int {
         return 100 - gamestate.rounds.map { if (it.p1 == Move.D) 1 else 0 }.sum()
     }
@@ -61,7 +68,7 @@ class MyBot : Bot {
     }
     fun target_draw_number(gamestate: Gamestate):Int{
         //return how many draws we need for optimal dynamite conservation
-        val dynamite_fraction=dynamiteLeft(gamestate)/(2010.0-gamestate.rounds.size)
+        val dynamite_fraction=dynamiteLeft(gamestate)/kotlin.math.max(2000.0-gamestate.rounds.size,1.0)
         if (dynamite_fraction==0.0){return 9999}
         else{
             var n=0
